@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuis PPKn: Demokrasi UUD 1945</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- jsPDF CDN for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Light Blue Gray */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            width: 100%;
+        }
+        .app-card {
+            background-color: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            margin-bottom: 20px;
+            border: 1px solid #e0e7ff;
+            animation: fadeIn 0.5s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .question-text {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 20px;
+        }
+        .option-button {
+            width: 100%;
+            padding: 14px 18px;
+            margin-bottom: 12px;
+            border-radius: 10px;
+            text-align: left;
+            transition: all 0.2s;
+            border: 2px solid #a5b4fc; /* Indigo 300 */
+            color: #1f2937;
+            background-color: #eef2ff; /* Indigo 50 */
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .option-button:hover:not(:disabled) {
+            background-color: #c7d2fe; /* Indigo 200 */
+            border-color: #6366f1; /* Indigo 500 */
+        }
+        .option-button:disabled {
+            cursor: default;
+        }
+        .correct {
+            background-color: #d1fae5; /* Green 100 */
+            border-color: #059669; /* Green 600 */
+            font-weight: 700;
+        }
+        .incorrect {
+            background-color: #fee2e2; /* Red 100 */
+            border-color: #ef4444; /* Red 500 */
+            font-weight: 700;
+        }
+        .rationale {
+            margin-top: 10px;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            border-left: 5px solid;
+        }
+        .rationale.correct-text {
+            border-left-color: #059669;
+            background-color: #ecfdf5;
+            color: #065f46;
+        }
+        .rationale.incorrect-text {
+            border-left-color: #ef4444;
+            background-color: #fef2f2;
+            color: #991b1b;
+        }
+        .score-display {
+            padding: 25px;
+            background-color: #eff6ff; /* Blue 100 */
+            border: 3px solid #3b82f6; /* Blue 500 */
+            border-radius: 12px;
+            text-align: center;
+        }
+        .main-button {
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-weight: 700;
+            transition: background-color 0.2s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        /* Style for mobile responsiveness */
+        @media (max-width: 600px) {
+            .app-card {
+                padding: 20px;
+            }
+            .question-text {
+                font-size: 1.1rem;
+            }
+            .main-button {
+                width: 100%;
+                margin-top: 10px;
+            }
+            .option-button {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header class="text-center mb-8">
+        <h1 class="text-4xl font-extrabold text-indigo-700">Kuis Demokrasi Indonesia</h1>
+        <p class="text-gray-600 mt-2 text-lg">PPKn Kelas 11 - Berbasis UUD NRI 1945</p>
+    </header>
+
+    <!-- 1. Login Screen -->
+    <div id="login-screen" class="app-card">
+        <h2 class="text-2xl font-bold mb-6 text-gray-800">Mulai Kuis</h2>
+        
+        <div class="mb-4">
+            <label for="student-name" class="block text-gray-700 font-semibold mb-2">Nama Lengkap</label>
+            <input type="text" id="student-name" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Contoh: Budi Santoso">
+        </div>
+        
+        <div class="mb-6">
+            <label for="student-class" class="block text-gray-700 font-semibold mb-2">Kelas</label>
+            <input type="text" id="student-class" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Contoh: XI IPA 2 atau XI-C">
+        </div>
+        
+        <button onclick="startQuiz()" class="main-button bg-indigo-600 text-white hover:bg-indigo-700 w-full">
+            Mulai Kuis (80 Menit)
+        </button>
+    </div>
+
+    <!-- 2. Quiz Container -->
+    <div id="quiz-container" class="hidden">
+        <!-- Questions will be dynamically loaded here -->
+    </div>
+
+    <!-- 3. Results Screen -->
+    <div id="results-screen" class="app-card hidden">
+        <h2 class="text-3xl font-bold mb-6 text-gray-800">Hasil Akhir Kuis</h2>
+        
+        <div id="score-summary" class="score-display mb-6">
+            <!-- Score summary will be displayed here -->
+        </div>
+
+        <div class="flex flex-col md:flex-row gap-4 justify-center">
+            <button onclick="downloadPDF()" class="main-button bg-green-600 text-white hover:bg-green-700">
+                Unduh Hasil ke PDF
+            </button>
+            <button onclick="resetQuiz()" class="main-button bg-gray-200 text-gray-700 hover:bg-gray-300">
+                Ulangi Kuis
+            </button>
+        </div>
+        
+        <!-- Custom Message Box for PDF status -->
+        <div id="message-box" class="mt-4 p-3 rounded-lg text-sm hidden"></div>
+    </div>
+
+</div>
+
+<script>
+    // Global State Variables
+    let currentQuestionIndex = 0;
+    let score = 0;
+    let answeredQuestions = Array(10).fill(null); // Initialize for 10 questions
+    let studentName = '';
+    let studentClass = '';
+    let quizStartTime = null;
+
+    // DOM Elements
+    const loginScreen = document.getElementById('login-screen');
+    const quizContainer = document.getElementById('quiz-container');
+    const resultsScreen = document.getElementById('results-screen');
+    const scoreSummary = document.getElementById('score-summary');
+    const messageBox = document.getElementById('message-box');
+
+    // Data Kuis (PPKn Kelas 11: Demokrasi UUD NRI 1945)
+    const quizData = [
+        {
+            question: "Berdasarkan Amandemen UUD NRI 1945, kedaulatan berada di tangan rakyat dan dilaksanakan menurut Undang-Undang Dasar. Hal ini tercantum dalam Pasal...",
+            options: [
+                { text: "Pasal 1 ayat (1)", isCorrect: false, rationale: "Pasal 1 ayat (1) membahas bentuk negara Indonesia adalah negara kesatuan yang berbentuk republik." },
+                { text: "Pasal 1 ayat (2)", isCorrect: true, rationale: "Pasal 1 ayat (2) hasil Amandemen menyatakan, 'Kedaulatan berada di tangan rakyat dan dilaksanakan menurut Undang-Undang Dasar'." },
+                { text: "Pasal 2 ayat (1)", isCorrect: false, rationale: "Pasal 2 ayat (1) membahas Majelis Permusyawaratan Rakyat (MPR)." },
+                { text: "Pasal 28E ayat (3)", isCorrect: false, rationale: "Pasal 28E ayat (3) membahas kebebasan berserikat, berkumpul, dan berpendapat." }
+            ]
+        },
+        {
+            question: "Prinsip demokrasi yang secara eksplisit tertuang dalam Pembukaan UUD NRI 1945 dan merupakan pilar utama adalah...",
+            options: [
+                { text: "Demokrasi dengan kecerdasan", isCorrect: false, rationale: "Kecerdasan adalah salah satu ciri, tetapi bukan prinsip utama yang diamanatkan langsung." },
+                { text: "Demokrasi berdasarkan ketuhanan yang Maha Esa", isCorrect: false, rationale: "Ketuhanan adalah dasar negara, namun bukan istilah spesifik untuk demokrasi." },
+                { text: "Demokrasi dengan Rule of Law (supremasi hukum)", isCorrect: false, rationale: "Supremasi hukum adalah ciri penting, tetapi bukan pilar utama di Pembukaan." },
+                { text: "Kerakyatan yang dipimpin oleh hikmat kebijaksanaan dalam permusyawaratan/perwakilan", isCorrect: true, rationale: "Prinsip ini merupakan sila keempat Pancasila, yang menjadi dasar demokrasi musyawarah mufakat di Indonesia." }
+            ]
+        },
+        {
+            question: "Wujud demokrasi langsung (direct democracy) yang diterapkan di Indonesia pasca Amandemen UUD NRI 1945 adalah...",
+            options: [
+                { text: "Pemilihan umum (Pemilu) untuk memilih Presiden dan Wakil Presiden", isCorrect: true, rationale: "Pemilu Presiden dan Wakil Presiden secara langsung oleh rakyat adalah contoh paling nyata dari demokrasi langsung." },
+                { text: "Pengambilan keputusan di Majelis Permusyawaratan Rakyat (MPR)", isCorrect: false, rationale: "MPR dan DPR adalah lembaga perwakilan, mewujudkan demokrasi tidak langsung." },
+                { text: "Perumusan kebijakan oleh Dewan Perwakilan Rakyat (DPR)", isCorrect: false, rationale: "DPR adalah lembaga perwakilan, mewujudkan demokrasi tidak langsung." },
+                { text: "Musyawarah mufakat di tingkat Rukun Tetangga (RT)", isCorrect: false, rationale: "Ini adalah demokrasi di tingkat lokal, namun Pemilu adalah manifestasi di tingkat nasional." }
+            ]
+        },
+        {
+            question: "Lembaga negara yang berwenang mengubah dan menetapkan Undang-Undang Dasar (UUD NRI 1945) adalah...",
+            options: [
+                { text: "Dewan Perwakilan Rakyat (DPR)", isCorrect: false, rationale: "DPR hanya memiliki hak mengusulkan dan membahas, tetapi tidak mengubah dan menetapkan UUD." },
+                { text: "Mahkamah Konstitusi (MK)", isCorrect: false, rationale: "MK berwenang menguji undang-undang terhadap UUD, bukan mengubah UUD." },
+                { text: "Majelis Permusyawaratan Rakyat (MPR)", isCorrect: true, rationale: "Menurut Pasal 3 UUD NRI 1945, MPR memiliki wewenang mengubah dan menetapkan Undang-Undang Dasar." },
+                { text: "Presiden Republik Indonesia", isCorrect: false, rationale: "Presiden adalah pemegang kekuasaan pemerintahan." }
+            ]
+        },
+        {
+            question: "Salah satu pilar penting dalam Demokrasi Konstitusional Indonesia yang menjamin kebebasan warga negara dari penyalahgunaan kekuasaan adalah...",
+            options: [
+                { text: "Kekuasaan yudikatif yang dipegang oleh Presiden", isCorrect: false, rationale: "Kekuasaan yudikatif (kehakiman) dipegang oleh Mahkamah Agung dan Mahkamah Konstitusi, bukan Presiden." },
+                { text: "Sistem Eksekutif Sentris", isCorrect: false, rationale: "Indonesia menganut sistem presidensial dengan check and balance, bukan sentralisasi pada eksekutif." },
+                { text: "Jaminan hak asasi manusia dan supremasi hukum (Rule of Law)", isCorrect: true, rationale: "Supremasi hukum dan HAM adalah fondasi utama demokrasi konstitusional yang membatasi kekuasaan negara." },
+                { text: "Penerapan sistem satu partai tunggal", isCorrect: false, rationale: "Demokrasi mensyaratkan multipartai, bukan satu partai tunggal." }
+            ]
+        },
+        {
+            question: "Hak warga negara untuk berserikat, berkumpul, dan mengeluarkan pendapat dijamin dalam UUD NRI 1945, yaitu pada Pasal...",
+            options: [
+                { text: "Pasal 27 ayat (1)", isCorrect: false, rationale: "Pasal 27 ayat (1) membahas persamaan kedudukan di mata hukum." },
+                { text: "Pasal 29 ayat (2)", isCorrect: false, rationale: "Pasal 29 ayat (2) membahas kemerdekaan memeluk agama dan beribadat." },
+                { text: "Pasal 28E ayat (3)", isCorrect: true, rationale: "Pasal 28E ayat (3) secara spesifik menjamin hak berserikat, berkumpul, dan mengeluarkan pendapat." },
+                { text: "Pasal 30 ayat (1)", isCorrect: false, rationale: "Pasal 30 ayat (1) membahas hak dan kewajiban warga negara dalam usaha pertahanan dan keamanan negara." }
+            ]
+        },
+        {
+            question: "Dalam sistem pemerintahan Presidensial yang dianut Indonesia, kekuasaan tertinggi dipegang oleh...",
+            options: [
+                { text: "Majelis Permusyawaratan Rakyat (MPR)", isCorrect: false, rationale: "Kekuasaan tertinggi (kedaulatan) berada di tangan Rakyat (Pasal 1 ayat 2)." },
+                { text: "Dewan Perwakilan Rakyat (DPR)", isCorrect: false, rationale: "DPR adalah pemegang kekuasaan legislatif." },
+                { text: "Presiden", isCorrect: false, rationale: "Presiden adalah kepala pemerintahan dan kepala negara, namun bukan pemegang kekuasaan tertinggi dalam arti kedaulatan." },
+                { text: "Rakyat", isCorrect: true, rationale: "Kedaulatan berada di tangan rakyat dan dilaksanakan menurut UUD (Pasal 1 ayat 2)." }
+            ]
+        },
+        {
+            question: "Berikut ini yang BUKAN merupakan ciri-ciri Demokrasi Pancasila yang terkandung dalam UUD NRI 1945 adalah...",
+            options: [
+                { text: "Mengutamakan musyawarah untuk mencapai mufakat", isCorrect: false, rationale: "Ini adalah ciri utama Demokrasi Pancasila." },
+                { text: "Adanya mekanisme *check and balance* antar lembaga negara", isCorrect: false, rationale: "Ini adalah ciri penting untuk mencegah sentralisasi kekuasaan." },
+                { text: "Penerapan sistem totaliter dan otoriter", isCorrect: true, rationale: "Demokrasi Pancasila menolak totaliterisme dan otoritarianisme karena bertentangan dengan prinsip kedaulatan rakyat." },
+                { text: "Menjunjung tinggi hak asasi manusia (HAM)", isCorrect: false, rationale: "Penghormatan HAM adalah ciri fundamental demokrasi modern." }
+            ]
+        },
+        {
+            question: "Perubahan fundamental dalam sistem Pemilu di Indonesia setelah Amandemen UUD 1945 yang mencerminkan demokrasi langsung adalah...",
+            options: [
+                { text: "Pemilihan anggota DPR dan DPRD dilakukan secara tertutup", isCorrect: false, rationale: "Pemilihan anggota DPR/DPRD dilakukan secara terbuka." },
+                { text: "Pemilihan Kepala Daerah (Gubernur, Bupati, Walikota) dilakukan oleh DPRD", isCorrect: false, rationale: "Kepala Daerah dipilih secara langsung oleh rakyat (Pilkada)." },
+                { text: "Pemilihan Presiden dan Wakil Presiden dilakukan secara langsung oleh rakyat", isCorrect: true, rationale: "Perubahan ini adalah wujud paling signifikan dari penerapan demokrasi langsung di tingkat nasional." },
+                { text: "Pemerintahan dipimpin oleh Dewan Menteri", isCorrect: false, rationale: "Indonesia tetap menganut sistem presidensial." }
+            ]
+        },
+        {
+            question: "Salah satu fungsi Dewan Perwakilan Rakyat (DPR) yang berkaitan dengan pembuatan undang-undang adalah fungsi...",
+            options: [
+                { text: "Fungsi Pengawasan (Kontrol)", isCorrect: false, rationale: "Fungsi Pengawasan adalah mengawasi jalannya pemerintahan." },
+                { text: "Fungsi Anggaran (Budgeting)", isCorrect: false, rationale: "Fungsi Anggaran adalah membahas dan menetapkan APBN." },
+                { text: "Fungsi Legislasi", isCorrect: true, rationale: "Fungsi Legislasi adalah fungsi utama DPR dalam membentuk undang-undang bersama Presiden." },
+                { text: "Fungsi Yudikatif", isCorrect: false, rationale: "Fungsi Yudikatif adalah fungsi kekuasaan kehakiman." }
+            ]
+        }
+    ];
+
+    // --- Core Functions ---
+
+    function startQuiz() {
+        studentName = document.getElementById('student-name').value.trim();
+        studentClass = document.getElementById('student-class').value.trim();
+
+        if (studentName === '' || studentClass === '') {
+            showMessage('Harap masukkan Nama Lengkap dan Kelas Anda untuk memulai kuis.', 'bg-yellow-100 text-yellow-800 border-yellow-500');
+            return;
+        }
+
+        // Reset state for a new quiz session
+        currentQuestionIndex = 0;
+        score = 0;
+        answeredQuestions = Array(quizData.length).fill(null);
+        quizStartTime = new Date();
+
+        // Transition views
+        loginScreen.classList.add('hidden');
+        resultsScreen.classList.add('hidden');
+        quizContainer.classList.remove('hidden');
+        
+        loadQuestion();
+        showMessage('', '', true); // Clear any login error messages
+    }
+
+    function loadQuestion() {
+        if (currentQuestionIndex >= quizData.length) {
+            showResults();
+            return;
+        }
+
+        const q = quizData[currentQuestionIndex];
+        const hasAnswered = answeredQuestions[currentQuestionIndex] !== null;
+
+        let questionHtml = `
+            <div id="q-${currentQuestionIndex}" class="app-card">
+                <p class="text-base text-indigo-600 font-semibold mb-2">Soal ${currentQuestionIndex + 1} dari ${quizData.length}</p>
+                <div class="question-text">${q.question}</div>
+                <div class="options-group">
+        `;
+
+        // Generate options buttons
+        q.options.forEach((option, index) => {
+            const isChosen = answeredQuestions[currentQuestionIndex] === index;
+            let buttonClass = 'option-button';
+            let rationaleHtml = '';
+            let disabledAttr = '';
+
+            if (hasAnswered) {
+                disabledAttr = 'disabled';
+                if (option.isCorrect) {
+                    buttonClass += ' correct';
+                    rationaleHtml = `<div class="rationale correct-text">**BENAR.** ${option.rationale}</div>`;
+                } else if (isChosen && !option.isCorrect) {
+                    buttonClass += ' incorrect';
+                    rationaleHtml = `<div class="rationale incorrect-text">**SALAH.** ${option.rationale}</div>`;
+                }
+            }
+
+            questionHtml += `
+                <button 
+                    class="${buttonClass}" 
+                    onclick="selectAnswer(${index})"
+                    ${disabledAttr}
+                >
+                    ${String.fromCharCode(65 + index)}. ${option.text}
+                </button>
+                ${hasAnswered ? rationaleHtml : ''}
+            `;
+        });
+
+        questionHtml += `
+                </div>
+                <div class="mt-8 flex justify-between">
+                    <button onclick="navigateQuestion(-1)" class="main-button bg-gray-200 text-gray-700 hover:bg-gray-300 ${currentQuestionIndex === 0 ? 'opacity-50 cursor-not-allowed' : ''}" ${currentQuestionIndex === 0 ? 'disabled' : ''}>
+                        &larr; Sebelumnya
+                    </button>
+                    <button id="next-button" onclick="navigateQuestion(1)" class="main-button ${!hasAnswered ? 'bg-gray-400 text-gray-600 cursor-not-allowed' : 'bg-indigo-600 text-white hover:bg-indigo-700'}" ${!hasAnswered ? 'disabled' : ''}>
+                        ${currentQuestionIndex === quizData.length - 1 ? 'Lihat Hasil Akhir' : 'Lanjut &rarr;'}
+                    </button>
+                </div>
+            </div>
+        `;
+
+        quizContainer.innerHTML = questionHtml;
+    }
+
+    function selectAnswer(selectedIndex) {
+        if (answeredQuestions[currentQuestionIndex] !== null) return;
+
+        answeredQuestions[currentQuestionIndex] = selectedIndex;
+        
+        const q = quizData[currentQuestionIndex];
+        const isCorrect = q.options[selectedIndex].isCorrect;
+        
+        if (isCorrect) {
+            score++;
+        }
+
+        // Reload to update UI (show correct/incorrect and rationale)
+        loadQuestion();
+    }
+
+    function navigateQuestion(direction) {
+        if (direction === 1 && answeredQuestions[currentQuestionIndex] === null && currentQuestionIndex < quizData.length - 1) {
+            return;
+        }
+
+        currentQuestionIndex += direction;
+        loadQuestion();
+    }
+
+    function showResults() {
+        const finalScore = score;
+        const totalQuestions = quizData.length;
+        const percentage = (finalScore / totalQuestions) * 100;
+        
+        let feedback = '';
+        if (percentage >= 90) {
+            feedback = 'Sangat Mengesankan! Penguasaan materi Demokrasi UUD 1945 Anda sangat baik.';
+        } else if (percentage >= 70) {
+            feedback = 'Bagus! Anda telah memahami konsep-konsep inti dengan baik.';
+        } else if (percentage >= 50) {
+            feedback = 'Cukup Baik. Perlu mengulas kembali beberapa pasal dan prinsip dasar demokrasi.';
+        } else {
+            feedback = 'Terus semangat belajar! Silakan ulangi kuis ini untuk meningkatkan pemahaman Anda.';
+        }
+
+        // Calculate time taken (optional, but good for reporting)
+        const quizEndTime = new Date();
+        const timeDiff = quizEndTime - quizStartTime; // difference in milliseconds
+        const minutes = Math.floor(timeDiff / (1000 * 60));
+        const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
+        const timeTaken = `${minutes} menit ${seconds} detik`;
+
+        scoreSummary.innerHTML = `
+            <p class="text-base font-semibold text-gray-600">Nama: ${studentName}</p>
+            <p class="text-base font-semibold text-gray-600 mb-4">Kelas: ${studentClass}</p>
+            <p class="text-6xl font-extrabold text-indigo-600 mb-2">${finalScore}/${totalQuestions}</p>
+            <p class="text-xl font-semibold text-gray-700 mb-2">Nilai Akhir: ${percentage.toFixed(0)}%</p>
+            <p class="text-sm text-gray-500 mb-4">Waktu Pengerjaan: ${timeTaken}</p>
+            <p class="text-md font-medium text-gray-800">${feedback}</p>
+        `;
+
+        quizContainer.classList.add('hidden');
+        resultsScreen.classList.remove('hidden');
+        showMessage('', '', true); // Clear message box
+    }
+
+    function resetQuiz() {
+        // Clear inputs and state
+        document.getElementById('student-name').value = '';
+        document.getElementById('student-class').value = '';
+        studentName = '';
+        studentClass = '';
+        currentQuestionIndex = 0;
+        score = 0;
+        answeredQuestions = Array(quizData.length).fill(null);
+        quizStartTime = null;
+
+        // Transition views
+        resultsScreen.classList.add('hidden');
+        loginScreen.classList.remove('hidden');
+        showMessage('', '', true); // Clear message box
+    }
+    
+    function showMessage(message, classes, clear = false) {
+        if (clear) {
+            messageBox.classList.add('hidden');
+            messageBox.className = 'mt-4 p-3 rounded-lg text-sm hidden';
+            return;
+        }
+        messageBox.innerHTML = message;
+        messageBox.className = `mt-4 p-3 rounded-lg text-sm ${classes}`;
+        messageBox.classList.remove('hidden');
+    }
+
+    // --- PDF Generation ---
+
+    function downloadPDF() {
+        showMessage('Membuat dokumen PDF...', 'bg-blue-100 text-blue-800 border-blue-500');
+        
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        const finalScore = score;
+        const totalQuestions = quizData.length;
+        const percentage = (finalScore / totalQuestions) * 100;
+        
+        // Get Time Taken from scoreSummary (re-extracting for certainty)
+        const timeTakenElement = scoreSummary.querySelector('.text-sm.text-gray-500.mb-4');
+        const timeTaken = timeTakenElement ? timeTakenElement.textContent.replace('Waktu Pengerjaan: ', '') : 'Tidak Terekam';
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(20);
+        doc.text("Laporan Hasil Kuis PPKn", 105, 20, null, null, "center");
+
+        doc.setLineWidth(0.5);
+        doc.line(20, 25, 190, 25);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(12);
+        
+        let y = 35;
+        const lineSpacing = 8;
+        
+        doc.text(`Nama Siswa: ${studentName}`, 20, y); y += lineSpacing;
+        doc.text(`Kelas: ${studentClass}`, 20, y); y += lineSpacing;
+        doc.text(`Tanggal Pengerjaan: ${new Date().toLocaleDateString('id-ID')}`, 20, y); y += lineSpacing;
+        doc.text(`Waktu Pengerjaan: ${timeTaken}`, 20, y); y += lineSpacing * 2;
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(16);
+        doc.text("HASIL KUIS", 105, y, null, null, "center"); y += lineSpacing;
+        
+        doc.setLineWidth(0.5);
+        doc.line(20, y, 190, y); y += lineSpacing * 1.5;
+
+        // Score display
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(36);
+        doc.text(`${finalScore}/${totalQuestions}`, 105, y, null, null, "center"); y += 15;
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(14);
+        doc.text(`Persentase Nilai: ${percentage.toFixed(0)}%`, 105, y, null, null, "center"); y += lineSpacing * 2;
+
+        // Detailed Report (Optional, but useful)
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(12);
+        doc.text("Rangkuman Jawaban:", 20, y); y += lineSpacing;
+        
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        
+        quizData.forEach((q, index) => {
+            const chosenIndex = answeredQuestions[index];
+            const isCorrect = q.options[chosenIndex]?.isCorrect || false;
+            const status = isCorrect ? "BENAR" : "SALAH";
+            const color = isCorrect ? [0, 150, 105] : [239, 68, 68]; // Green/Red
+            const chosenText = chosenIndex !== null ? q.options[chosenIndex].text : "Tidak Dijawab";
+
+            if (y > 270) { // Check for new page
+                doc.addPage();
+                y = 20;
+            }
+
+            doc.text(`Soal ${index + 1}:`, 20, y);
+            doc.text(q.question.substring(0, 70) + '...', 40, y); 
+            
+            doc.setTextColor(color[0], color[1], color[2]);
+            doc.text(status, 175, y); 
+            
+            doc.setTextColor(0, 0, 0); // Reset color
+            y += lineSpacing;
+        });
+
+
+        doc.save(`Hasil_Kuis_PPKN_${studentName}_${studentClass}.pdf`);
+        showMessage('Dokumen PDF berhasil dibuat dan diunduh.', 'bg-green-100 text-green-800 border-green-500');
+    }
+
+    // Initialize the application on the login screen
+    document.addEventListener('DOMContentLoaded', () => {
+        loginScreen.classList.remove('hidden');
+    });
+</script>
+
+</body>
+</html>
